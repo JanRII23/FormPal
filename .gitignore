@@ -140,3 +140,12 @@ crash.log
 *.tmp
 *.temp
 .cache/
+
+# ------------------------------
+# Chrome Extension Specific
+# ------------------------------
+*.crx
+*.zip
+
+# Extension backups
+extension-backup/
