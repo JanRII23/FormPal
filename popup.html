@@ -19,6 +19,15 @@
       <div class="section-header">
         <label for="profileSelect">Active Profile</label>
         <div class="profile-actions">
+          <button id="btnBack" class="btn btn-small btn-secondary hidden" title="Go back">
+            &#8592; Back
+          </button>
+          <button id="btnEditProfile" class="btn btn-small btn-secondary hidden" title="Edit selected profile">
+            <span class="icon">&#9998;</span> Edit
+          </button>
+          <button id="btnDeleteProfile" class="btn btn-small btn-danger" title="Delete selected profile">
+            <span class="icon">&#128465;</span>
+          </button>
           <button id="btnNewProfile" class="btn btn-small btn-primary" title="Create new profile">
             <span class="icon">+</span> New
           </button>
@@ -34,9 +43,6 @@
       <div class="section-header">
         <h2 id="editorTitle">Create Profile</h2>
         <div class="editor-actions">
-          <button id="btnDeleteProfile" class="btn btn-small btn-danger hidden" title="Delete profile">
-            <span class="icon">&#128465;</span>
-          </button>
           <button id="btnCancelEdit" class="btn btn-small btn-secondary" title="Cancel">
             Cancel
           </button>
@@ -53,11 +59,11 @@
         <div class="form-row">
           <div class="form-group flex-2">
             <label for="profileName">Profile Name</label>
-            <input type="text" id="profileName" class="text-input" placeholder="e.g., Software Developer" required>
+            <input type="text" id="profileName" class="text-input" placeholder="e.g., Software Developer" required aria-label="Profile name">
           </div>
           <div class="form-group flex-1">
             <label for="profileType">Type</label>
-            <select id="profileType" class="select-input">
+            <select id="profileType" class="select-input" aria-label="Profile type">
               <option value="work">Work</option>
               <option value="personal">Personal</option>
               <option value="freelance">Freelance</option>
@@ -69,43 +75,65 @@
         <div class="form-group">
           <label class="section-label">Contact Information</label>
           <div class="form-row">
-            <input type="text" id="fullName" class="text-input" placeholder="Full Name">
-            <input type="email" id="email" class="text-input" placeholder="Email">
-            <input type="tel" id="phone" class="text-input" placeholder="Phone Number">
+            <input type="text" id="firstName" class="text-input" placeholder="First Name" aria-label="First name">
+            <input type="text" id="lastName" class="text-input" placeholder="Last Name" aria-label="Last name">
+          </div>
+          <div class="form-row">
+            <input type="text" id="preferredName" class="text-input" placeholder="Preferred Name" aria-label="Preferred name">
+            <input type="text" id="fullName" class="text-input" placeholder="Full Name" aria-label="Full name">
+          </div>
+          <div class="form-row">
+            <input type="email" id="email" class="text-input" placeholder="Email" aria-label="Email address">
+            <input type="tel" id="phone" class="text-input" placeholder="Phone Number" aria-label="Phone number">
+          </div>
+          <div class="form-row">
+            <input type="url" id="linkedIn" class="text-input" placeholder="LinkedIn URL" aria-label="LinkedIn profile URL">
+            <input type="url" id="website" class="text-input" placeholder="Website URL" aria-label="Personal website URL">
           </div>
         </div>
 
         <!-- Address -->
         <div class="form-group">
           <label class="section-label">Address</label>
-          <input type="text" id="street" class="text-input" placeholder="Street Address">
+          <input type="text" id="street" class="text-input" placeholder="Street Address" aria-label="Street address">
           <div class="form-row three-col">
-            <input type="text" id="city" class="text-input" placeholder="City">
-            <input type="text" id="state" class="text-input" placeholder="State">
-            <input type="text" id="zipCode" class="text-input" placeholder="ZIP Code">
+            <input type="text" id="city" class="text-input" placeholder="City" aria-label="City">
+            <input type="text" id="state" class="text-input" placeholder="State" aria-label="State">
+            <input type="text" id="zipCode" class="text-input" placeholder="ZIP Code" aria-label="ZIP code">
+          </div>
+          <div class="form-row">
+            <input type="text" id="county" class="text-input" placeholder="County" aria-label="County">
+            <select id="country" class="select-input" aria-label="Country">
+              <option value="">Select Country</option>
+              <option value="United States">United States</option>
+              <option value="US">US</option>
+            </select>
           </div>
         </div>
 
         <!-- Work Experience -->
         <div class="form-group">
-          <label class="section-label">Work Experience</label>
-          <input type="text" id="jobTitle" class="text-input" placeholder="Job Title">
-          <input type="text" id="company" class="text-input" placeholder="Company Name">
-          <div class="form-row">
-            <input type="text" id="startDate" class="text-input" placeholder="Start Date (e.g., Jan 2020)">
-            <input type="text" id="endDate" class="text-input" placeholder="End Date (e.g., Present)">
+          <div class="section-label-row">
+            <label class="section-label">Work Experience</label>
+            <button type="button" id="btnAddWork" class="btn btn-add btn-small btn-secondary">
+              <span class="icon">+</span> Add Entry
+            </button>
           </div>
-          <textarea id="responsibilities" class="text-input textarea" placeholder="Responsibilities / Description"></textarea>
+          <div id="workEntries" class="entries-container">
+            <!-- Work entries will be dynamically added here -->
+          </div>
         </div>
 
         <!-- Education -->
         <div class="form-group">
-          <label class="section-label">Education</label>
-          <input type="text" id="school" class="text-input" placeholder="School / University">
-          <div class="form-row">
-            <input type="text" id="degree" class="text-input" placeholder="Degree">
-            <input type="text" id="fieldOfStudy" class="text-input" placeholder="Field of Study">
-            <input type="text" id="graduationYear" class="text-input" placeholder="Graduation Year">
+          <div class="section-label-row">
+            <label class="section-label">Education</label>
+            <button type="button" id="btnAddEducation" class="btn btn-add btn-small btn-secondary">
+              <span class="icon">+</span> Add Entry
+            </button>
+          </div>
+          <div id="educationEntries" class="entries-container">
+            <!-- Education entries will be dynamically added here -->
           </div>
         </div>
 
@@ -113,18 +141,18 @@
         <div class="form-group">
           <label class="section-label">Skills</label>
           <div class="form-row">
-            <input type="text" id="skills" class="text-input" placeholder="Skills (comma-separated)">
-            <input type="text" id="languages" class="text-input" placeholder="Languages">
-            <input type="text" id="certifications" class="text-input" placeholder="Certifications">
+            <input type="text" id="skills" class="text-input" placeholder="Skills (comma-separated)" aria-label="Skills">
+            <input type="text" id="languages" class="text-input" placeholder="Languages" aria-label="Languages">
+            <input type="text" id="certifications" class="text-input" placeholder="Certifications" aria-label="Certifications">
           </div>
         </div>
 
         <!-- Resume Info -->
         <div class="form-group">
           <label class="section-label">Additional Info</label>
-          <textarea id="summary" class="text-input textarea" placeholder="Professional Summary"></textarea>
-          <input type="text" id="workEligibility" class="text-input" placeholder="Work Eligibility (e.g., US Citizen, H1B)">
-          <input type="text" id="salaryExpectations" class="text-input" placeholder="Salary Expectations">
+          <textarea id="summary" class="text-input textarea" placeholder="Professional Summary" aria-label="Professional summary"></textarea>
+          <input type="text" id="workEligibility" class="text-input" placeholder="Work Eligibility (e.g., US Citizen, H1B)" aria-label="Work eligibility">
+          <input type="text" id="salaryExpectations" class="text-input" placeholder="Salary Expectations" aria-label="Salary expectations">
         </div>
       </form>
     </section>
@@ -155,6 +183,26 @@
     <footer class="footer">
       <p>All data stored locally in Chrome</p>
     </footer>
+  </div>
+
+  <!-- Autofill Selection Modal -->
+  <div id="autofillModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">Select Entry to Fill</h3>
+        <button id="modalClose" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="modalDescription"></p>
+        <div id="modalOptions" class="modal-options">
+          <!-- Options will be dynamically added here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="modalFillAll" class="btn btn-small btn-primary">Fill All</button>
+        <button id="modalCancel" class="btn btn-small btn-secondary">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <script src="utils.js"></script>

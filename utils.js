@@ -103,11 +103,69 @@ async function getProfileById(profileId) {
 async function exportData() {
   const profiles = await getProfiles();
   const exportObj = {
-    version: '1.0',
+    version: '2.0',
     exportedAt: new Date().toISOString(),
     profiles: profiles
   };
   return JSON.stringify(exportObj, null, 2);
+}
+
+/**
+ * Migrate profile from v1 schema to v2 schema
+ * @param {Object} profile - Profile in v1 format
+ * @returns {Object} - Profile in v2 format
+ */
+function migrateProfileV1toV2(profile) {
+  const migrated = { ...profile };
+  
+  // Migrate contact info
+  if (migrated.contact && migrated.contact.fullName && !migrated.contact.firstName) {
+    const nameParts = migrated.contact.fullName.split(' ');
+    migrated.contact.firstName = nameParts[0] || '';
+    migrated.contact.lastName = nameParts.slice(1).join(' ') || '';
+  }
+  
+  // Migrate work from single object to array
+  if (migrated.work && !Array.isArray(migrated.work)) {
+    migrated.work = [{
+      id: generateUUID(),
+      order: 0,
+      jobTitle: migrated.work.jobTitle || '',
+      company: migrated.work.company || '',
+      startDate: migrated.work.startDate || '',
+      endDate: migrated.work.endDate || '',
+      responsibilities: migrated.work.responsibilities || ''
+    }];
+  }
+  
+  // Migrate education from single object to array
+  if (migrated.education && !Array.isArray(migrated.education)) {
+    migrated.education = [{
+      id: generateUUID(),
+      order: 0,
+      school: migrated.education.school || '',
+      degree: migrated.education.degree || '',
+      fieldOfStudy: migrated.education.fieldOfStudy || '',
+      graduationYear: migrated.education.graduationYear || ''
+    }];
+  }
+  
+  // Add default values for new fields
+  if (!migrated.contact) {
+    migrated.contact = {};
+  }
+  if (!migrated.contact.preferredName) migrated.contact.preferredName = '';
+  if (!migrated.contact.fullName) migrated.contact.fullName = '';
+  if (!migrated.contact.linkedIn) migrated.contact.linkedIn = '';
+  if (!migrated.contact.website) migrated.contact.website = '';
+  
+  if (!migrated.address) {
+    migrated.address = {};
+  }
+  if (!migrated.address.county) migrated.address.county = '';
+  if (!migrated.address.country) migrated.address.country = '';
+  
+  return migrated;
 }
 
 /**
@@ -138,13 +196,20 @@ async function importData(jsonString, merge = true) {
           continue;
         }
         
-        // Generate new ID if duplicate to avoid conflicts
-        if (existingIds.has(profile.id)) {
-          profile.id = generateUUID();
+        // Migrate from v1 schema if needed
+        const version = importObj.version || '1.0';
+        let processedProfile = profile;
+        if (version === '1.0') {
+          processedProfile = migrateProfileV1toV2(profile);
         }
-        existingIds.add(profile.id);
         
-        existingProfiles.push(profile);
+        // Generate new ID if duplicate to avoid conflicts
+        if (existingIds.has(processedProfile.id)) {
+          processedProfile.id = generateUUID();
+        }
+        existingIds.add(processedProfile.id);
+        
+        existingProfiles.push(processedProfile);
         importedCount++;
       } catch (e) {
         errors.push(`Error importing profile "${profile.name || 'unknown'}": ${e.message}`);
@@ -213,6 +278,88 @@ async function triggerFillForm(profileId) {
   
   if (!profile) {
     return { success: false, fieldsFilled: 0, message: 'Profile not found' };
+  }
+  
+  return new Promise((resolve) => {
+    chrome.tabs.sendMessage(tab.id, {
+      type: 'FILL_FORM',
+      profile: profile
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        resolve({
+          success: false,
+          fieldsFilled: 0,
+          message: 'Could not connect to page. Make sure you are on a form page.'
+        });
+        return;
+      }
+      resolve(response || { success: false, fieldsFilled: 0, message: 'No response from content script' });
+    });
+  });
+}
+
+// Draft storage key
+const DRAFT_STORAGE_KEY = 'formpal_draft';
+
+/**
+ * Save form data as draft
+ * @param {Object} profileData - The profile data to save as draft
+ * @returns {Promise<void>}
+ */
+async function saveDraft(profileData) {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.set({ [DRAFT_STORAGE_KEY]: profileData }, () => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+/**
+ * Get saved draft
+ * @returns {Promise<Object|null>}
+ */
+async function getDraft() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.get([DRAFT_STORAGE_KEY], (result) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+        return;
+      }
+      resolve(result[DRAFT_STORAGE_KEY] || null);
+    });
+  });
+}
+
+/**
+ * Clear saved draft
+ * @returns {Promise<void>}
+ */
+async function clearDraft() {
+  return new Promise((resolve, reject) => {
+    chrome.storage.local.remove([DRAFT_STORAGE_KEY], () => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
+/**
+ * Send profile data directly to content script to fill form
+ * @param {Object} profile - The profile data to use for filling
+ * @returns {Promise<{success: boolean, fieldsFilled: number, message: string}>}
+ */
+async function triggerFillFormWithData(profile) {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  
+  if (!tab) {
+    return { success: false, fieldsFilled: 0, message: 'No active tab found' };
   }
   
   return new Promise((resolve) => {

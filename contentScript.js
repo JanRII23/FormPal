@@ -6,6 +6,40 @@
   // Field mapping configurations - common patterns for job application fields
   const FIELD_MAPPINGS = {
     // Contact Information
+    firstName: {
+      selectors: [
+        'input[name*="first" i]',
+        'input[id*="first" i]',
+        'input[placeholder*="first name" i]',
+        'input[aria-label*="first name" i]',
+        'input[autocomplete="given-name"]',
+        '#firstname', '#first-name', '#firstName'
+      ],
+      type: 'text'
+    },
+    lastName: {
+      selectors: [
+        'input[name*="last" i]',
+        'input[id*="last" i]',
+        'input[placeholder*="last name" i]',
+        'input[aria-label*="last name" i]',
+        'input[autocomplete="family-name"]',
+        '#lastname', '#last-name', '#lastName'
+      ],
+      type: 'text'
+    },
+    preferredName: {
+      selectors: [
+        'input[name*="preferred" i]',
+        'input[name*="nickname" i]',
+        'input[id*="preferred" i]',
+        'input[id*="nickname" i]',
+        'input[placeholder*="preferred" i]',
+        'input[placeholder*="nickname" i]',
+        '#preferredName', '#nickname'
+      ],
+      type: 'text'
+    },
     fullName: {
       selectors: [
         'input[name*="name" i]',
@@ -43,6 +77,41 @@
         '#phone', '#phone-number', '#telephone'
       ],
       type: 'tel'
+    },
+    linkedIn: {
+      selectors: [
+        'input[name*="linkedin" i]',
+        'input[name*="linked-in" i]',
+        'input[name*="profileurl" i]',
+        'input[name*="profile_url" i]',
+        'input[name*="profile-url" i]',
+        'input[id*="linkedin" i]',
+        'input[id*="linked-in" i]',
+        'input[id*="profileurl" i]',
+        'input[id*="profile_url" i]',
+        'input[id*="profile-url" i]',
+        'input[placeholder*="linkedin" i]',
+        'input[placeholder*="linked-in" i]',
+        'input[placeholder*="linkedin.com" i]',
+        'input[placeholder*="profile url" i]',
+        'input[placeholder*="profile URL" i]',
+        'input[placeholder*="personal website" i]',
+        '#linkedin', '#linkedIn', '#linked-in', '#profileUrl', '#profile-url', '#profile_url'
+      ],
+      type: 'url'
+    },
+    website: {
+      selectors: [
+        'input[name*="website" i]',
+        'input[name*="url" i]',
+        'input[name*="portfolio" i]',
+        'input[id*="website" i]',
+        'input[id*="url" i]',
+        'input[placeholder*="website" i]',
+        'input[placeholder*="portfolio" i]',
+        '#website', '#portfolio', '#personal-website'
+      ],
+      type: 'url'
     },
 
     // Address - Street
@@ -95,6 +164,26 @@
         '#zip', '#zipcode', '#zip-code', '#postal', '#postal-code'
       ],
       type: 'text'
+    },
+    county: {
+      selectors: [
+        'input[name*="county" i]',
+        'input[id*="county" i]',
+        'input[placeholder*="county" i]',
+        '#county', '#county-input'
+      ],
+      type: 'text'
+    },
+    country: {
+      selectors: [
+        'select[name*="country" i]',
+        'select[id*="country" i]',
+        'input[name*="country" i]',
+        'input[id*="country" i]',
+        'input[placeholder*="country" i]',
+        '#country', '#country-input'
+      ],
+      type: 'select'
     },
 
     // Work Experience
@@ -298,6 +387,31 @@
   }
 
   /**
+   * Find all elements matching field selectors (for filling multiple entries)
+   */
+  function findAllFormElements() {
+    const elements = {};
+    
+    for (const [fieldName, config] of Object.entries(FIELD_MAPPINGS)) {
+      elements[fieldName] = [];
+      for (const selector of config.selectors) {
+        try {
+          const found = document.querySelectorAll(selector);
+          for (const el of found) {
+            if (isElementVisible(el) && !isElementDisabled(el)) {
+              elements[fieldName].push(el);
+            }
+          }
+        } catch (e) {
+          // Invalid selector, continue to next
+        }
+      }
+    }
+    
+    return elements;
+  }
+
+  /**
    * Find the best matching element for a field
    */
   function findElementForField(selectors) {
@@ -470,7 +584,36 @@
   }
 
   /**
-   * Fill form with profile data
+   * Build full name from contact
+   */
+  function buildFullName(contact) {
+    return contact.fullName || '';
+  }
+
+  /**
+   * Get the first work entry or the only entry
+   */
+  function getWorkEntry(profile) {
+    if (Array.isArray(profile.work) && profile.work.length > 0) {
+      // Return the first one (sorted by order)
+      return profile.work.sort((a, b) => (a.order || 0) - (b.order || 0))[0];
+    }
+    return profile.work || null;
+  }
+
+  /**
+   * Get the first education entry or the only entry
+   */
+  function getEducationEntry(profile) {
+    if (Array.isArray(profile.education) && profile.education.length > 0) {
+      // Return the first one (sorted by order)
+      return profile.education.sort((a, b) => (a.order || 0) - (b.order || 0))[0];
+    }
+    return profile.education || null;
+  }
+
+  /**
+   * Fill form with profile data (single entry version)
    */
   function fillFormWithProfile(profile) {
     const elements = findFormElements();
@@ -478,65 +621,95 @@
     
     // Contact info
     if (profile.contact) {
-      if (profile.contact.fullName && elements.fullName) {
-        if (fillElement(elements.fullName, profile.contact.fullName)) fieldsFilled++;
+      const contact = profile.contact;
+      
+      // New schema: firstName, lastName, preferredName
+      if (contact.firstName && elements.firstName) {
+        if (fillElement(elements.firstName, contact.firstName)) fieldsFilled++;
       }
-      if (profile.contact.email && elements.email) {
-        if (fillElement(elements.email, profile.contact.email)) fieldsFilled++;
+      if (contact.lastName && elements.lastName) {
+        if (fillElement(elements.lastName, contact.lastName)) fieldsFilled++;
       }
-      if (profile.contact.phone && elements.phone) {
-        if (fillElement(elements.phone, profile.contact.phone)) fieldsFilled++;
+      if (contact.preferredName && elements.preferredName) {
+        if (fillElement(elements.preferredName, contact.preferredName)) fieldsFilled++;
+      }
+      
+      // fullName - use stored value directly
+      if (contact.fullName && elements.fullName) {
+        if (fillElement(elements.fullName, contact.fullName)) fieldsFilled++;
+      }
+      
+      if (contact.email && elements.email) {
+        if (fillElement(elements.email, contact.email)) fieldsFilled++;
+      }
+      if (contact.phone && elements.phone) {
+        if (fillElement(elements.phone, contact.phone)) fieldsFilled++;
+      }
+      if (contact.linkedIn && elements.linkedIn) {
+        if (fillElement(elements.linkedIn, contact.linkedIn)) fieldsFilled++;
+      }
+      if (contact.website && elements.website) {
+        if (fillElement(elements.website, contact.website)) fieldsFilled++;
       }
     }
     
     // Address
     if (profile.address) {
-      if (profile.address.street && elements.street) {
-        if (fillElement(elements.street, profile.address.street)) fieldsFilled++;
+      const address = profile.address;
+      if (address.street && elements.street) {
+        if (fillElement(elements.street, address.street)) fieldsFilled++;
       }
-      if (profile.address.city && elements.city) {
-        if (fillElement(elements.city, profile.address.city)) fieldsFilled++;
+      if (address.city && elements.city) {
+        if (fillElement(elements.city, address.city)) fieldsFilled++;
       }
-      if (profile.address.state && elements.state) {
-        if (fillElement(elements.state, profile.address.state)) fieldsFilled++;
+      if (address.state && elements.state) {
+        if (fillElement(elements.state, address.state)) fieldsFilled++;
       }
-      if (profile.address.zipCode && elements.zipCode) {
-        if (fillElement(elements.zipCode, profile.address.zipCode)) fieldsFilled++;
+      if (address.zipCode && elements.zipCode) {
+        if (fillElement(elements.zipCode, address.zipCode)) fieldsFilled++;
+      }
+      if (address.county && elements.county) {
+        if (fillElement(elements.county, address.county)) fieldsFilled++;
+      }
+      if (address.country && elements.country) {
+        if (fillElement(elements.country, address.country)) fieldsFilled++;
       }
     }
     
     // Work experience
-    if (profile.work) {
-      if (profile.work.jobTitle && elements.jobTitle) {
-        if (fillElement(elements.jobTitle, profile.work.jobTitle)) fieldsFilled++;
+    const workEntry = getWorkEntry(profile);
+    if (workEntry) {
+      if (workEntry.jobTitle && elements.jobTitle) {
+        if (fillElement(elements.jobTitle, workEntry.jobTitle)) fieldsFilled++;
       }
-      if (profile.work.company && elements.company) {
-        if (fillElement(elements.company, profile.work.company)) fieldsFilled++;
+      if (workEntry.company && elements.company) {
+        if (fillElement(elements.company, workEntry.company)) fieldsFilled++;
       }
-      if (profile.work.startDate && elements.startDate) {
-        if (fillElement(elements.startDate, profile.work.startDate)) fieldsFilled++;
+      if (workEntry.startDate && elements.startDate) {
+        if (fillElement(elements.startDate, workEntry.startDate)) fieldsFilled++;
       }
-      if (profile.work.endDate && elements.endDate) {
-        if (fillElement(elements.endDate, profile.work.endDate)) fieldsFilled++;
+      if (workEntry.endDate && elements.endDate) {
+        if (fillElement(elements.endDate, workEntry.endDate)) fieldsFilled++;
       }
-      if (profile.work.responsibilities && elements.responsibilities) {
-        if (fillElement(elements.responsibilities, profile.work.responsibilities)) fieldsFilled++;
+      if (workEntry.responsibilities && elements.responsibilities) {
+        if (fillElement(elements.responsibilities, workEntry.responsibilities)) fieldsFilled++;
       }
     }
     
     // Education
-    if (profile.education) {
-      if (profile.education.school && elements.school) {
-        if (fillElement(elements.school, profile.education.school)) fieldsFilled++;
+    const educationEntry = getEducationEntry(profile);
+    if (educationEntry) {
+      if (educationEntry.school && elements.school) {
+        if (fillElement(elements.school, educationEntry.school)) fieldsFilled++;
       }
-      if (profile.education.degree && elements.degree) {
-        if (fillElement(elements.degree, profile.education.degree)) fieldsFilled++;
+      if (educationEntry.degree && elements.degree) {
+        if (fillElement(elements.degree, educationEntry.degree)) fieldsFilled++;
       }
-      if (profile.education.fieldOfStudy && elements.fieldOfStudy) {
-        if (fillElement(elements.fieldOfStudy, profile.education.fieldOfStudy)) fieldsFilled++;
+      if (educationEntry.fieldOfStudy && elements.fieldOfStudy) {
+        if (fillElement(elements.fieldOfStudy, educationEntry.fieldOfStudy)) fieldsFilled++;
       }
-      if (profile.education.graduationYear && elements.graduationYear) {
-        if (fillElement(elements.graduationYear, profile.education.graduationYear)) fieldsFilled++;
+      if (educationEntry.graduationYear && elements.graduationYear) {
+        if (fillElement(elements.graduationYear, educationEntry.graduationYear)) fieldsFilled++;
       }
     }
     
