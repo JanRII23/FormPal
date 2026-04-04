@@ -1,10 +1,163 @@
-<link href="popup.css" rel="stylesheet" type="text/css" />
-<script type="module" src="popup.js"></script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FormPal</title>
+  <link href="popup.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1 class="logo">FormPal</h1>
+      <span class="tagline">Auto-fill job applications</span>
+    </header>
 
-<div class="container">
-  <div>
-    <div class="title">Your bookmarks for this video</div>
+    <!-- Profile Selector Section -->
+    <section class="section profile-section">
+      <div class="section-header">
+        <label for="profileSelect">Active Profile</label>
+        <div class="profile-actions">
+          <button id="btnNewProfile" class="btn btn-small btn-primary" title="Create new profile">
+            <span class="icon">+</span> New
+          </button>
+        </div>
+      </div>
+      <select id="profileSelect" class="select-input">
+        <option value="">Select a profile...</option>
+      </select>
+    </section>
 
-    <div class="bookmarks" id="bookmarks"></div>
+    <!-- Profile Editor (Collapsible) -->
+    <section id="profileEditor" class="section editor-section hidden">
+      <div class="section-header">
+        <h2 id="editorTitle">Create Profile</h2>
+        <div class="editor-actions">
+          <button id="btnDeleteProfile" class="btn btn-small btn-danger hidden" title="Delete profile">
+            <span class="icon">&#128465;</span>
+          </button>
+          <button id="btnCancelEdit" class="btn btn-small btn-secondary" title="Cancel">
+            Cancel
+          </button>
+          <button id="btnSaveProfile" class="btn btn-small btn-success" title="Save profile">
+            Save
+          </button>
+        </div>
+      </div>
+
+      <form id="profileForm" class="profile-form">
+        <input type="hidden" id="profileId" value="">
+
+        <!-- Profile Name & Type -->
+        <div class="form-row">
+          <div class="form-group flex-2">
+            <label for="profileName">Profile Name</label>
+            <input type="text" id="profileName" class="text-input" placeholder="e.g., Software Developer" required>
+          </div>
+          <div class="form-group flex-1">
+            <label for="profileType">Type</label>
+            <select id="profileType" class="select-input">
+              <option value="work">Work</option>
+              <option value="personal">Personal</option>
+              <option value="freelance">Freelance</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="form-group">
+          <label class="section-label">Contact Information</label>
+          <div class="form-row">
+            <input type="text" id="fullName" class="text-input" placeholder="Full Name">
+            <input type="email" id="email" class="text-input" placeholder="Email">
+            <input type="tel" id="phone" class="text-input" placeholder="Phone Number">
+          </div>
+        </div>
+
+        <!-- Address -->
+        <div class="form-group">
+          <label class="section-label">Address</label>
+          <input type="text" id="street" class="text-input" placeholder="Street Address">
+          <div class="form-row three-col">
+            <input type="text" id="city" class="text-input" placeholder="City">
+            <input type="text" id="state" class="text-input" placeholder="State">
+            <input type="text" id="zipCode" class="text-input" placeholder="ZIP Code">
+          </div>
+        </div>
+
+        <!-- Work Experience -->
+        <div class="form-group">
+          <label class="section-label">Work Experience</label>
+          <input type="text" id="jobTitle" class="text-input" placeholder="Job Title">
+          <input type="text" id="company" class="text-input" placeholder="Company Name">
+          <div class="form-row">
+            <input type="text" id="startDate" class="text-input" placeholder="Start Date (e.g., Jan 2020)">
+            <input type="text" id="endDate" class="text-input" placeholder="End Date (e.g., Present)">
+          </div>
+          <textarea id="responsibilities" class="text-input textarea" placeholder="Responsibilities / Description"></textarea>
+        </div>
+
+        <!-- Education -->
+        <div class="form-group">
+          <label class="section-label">Education</label>
+          <input type="text" id="school" class="text-input" placeholder="School / University">
+          <div class="form-row">
+            <input type="text" id="degree" class="text-input" placeholder="Degree">
+            <input type="text" id="fieldOfStudy" class="text-input" placeholder="Field of Study">
+            <input type="text" id="graduationYear" class="text-input" placeholder="Graduation Year">
+          </div>
+        </div>
+
+        <!-- Skills -->
+        <div class="form-group">
+          <label class="section-label">Skills</label>
+          <div class="form-row">
+            <input type="text" id="skills" class="text-input" placeholder="Skills (comma-separated)">
+            <input type="text" id="languages" class="text-input" placeholder="Languages">
+            <input type="text" id="certifications" class="text-input" placeholder="Certifications">
+          </div>
+        </div>
+
+        <!-- Resume Info -->
+        <div class="form-group">
+          <label class="section-label">Additional Info</label>
+          <textarea id="summary" class="text-input textarea" placeholder="Professional Summary"></textarea>
+          <input type="text" id="workEligibility" class="text-input" placeholder="Work Eligibility (e.g., US Citizen, H1B)">
+          <input type="text" id="salaryExpectations" class="text-input" placeholder="Salary Expectations">
+        </div>
+      </form>
+    </section>
+
+    <!-- Fill Form Button -->
+    <section class="section fill-section">
+      <button id="btnFillForm" class="btn btn-fill" disabled>
+        <span class="icon">&#10003;</span>
+        Fill Form on Page
+      </button>
+      <p id="fillStatus" class="status-message"></p>
+    </section>
+
+    <!-- Data Management -->
+    <section class="section data-section">
+      <div class="data-actions">
+        <button id="btnExport" class="btn btn-small btn-secondary" title="Export profiles">
+          <span class="icon">&#8599;</span> Export
+        </button>
+        <button id="btnImport" class="btn btn-small btn-secondary" title="Import profiles">
+          <span class="icon">&#8601;</span> Import
+        </button>
+        <input type="file" id="importFile" accept=".json" class="hidden">
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>All data stored locally in Chrome</p>
+    </footer>
   </div>
-</div>
+
+  <script src="utils.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
